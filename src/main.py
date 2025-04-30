@@ -3,12 +3,12 @@ from time import sleep, time
 import numpy as np
 import matplotlib.pyplot as plt
 from modules.muse_stream import MuseStream
-from modules.constants import LSL_EEG_CHUNK
+from modules.constants import LSL_EEG_CHUNK, SETTINGS_TOPIC, ACTIONS_TOPIC, TOGGLE_CELESTINO, TOGGLE_SOSTENUTO, DEFAULT_THRESHOLD
 from modules.lsl_viewer import LSLViewer
 import paho.mqtt.client as mqtt
 import json
 
-threshold = 40
+threshold = DEFAULT_THRESHOLD
 
 class MQTTConection:
     def __init__(self, adj_topic, host, port, keepalive):
@@ -18,7 +18,7 @@ class MQTTConection:
         self.client.on_message = self.on_message
         self.client.on_connect = self.on_connect
         self.client.connect(host, port, keepalive)
-        
+
     def start(self):
         print("MQTT Started")
         self.client.loop_start()
@@ -26,7 +26,7 @@ class MQTTConection:
     def on_connect(self, client, userdata, flags, reason_code, properties):
         print(f"Connected with result code {reason_code}")
         self.client.subscribe(self.adj_topic)
-        
+
     def on_message(self, client, userdata, msg):
         global threshold
         payload = json.loads(msg.payload.decode())
@@ -34,12 +34,18 @@ class MQTTConection:
         if msg.topic == self.adj_topic and payload["action"] == "CHANGE_THRESHOLD":
             print(f"✅ Threshold changed to {payload["value"]}")
             threshold = int(payload["value"])
+        elif msg.topic == self.adj_topic and payload["action"] == "DEFAULT_THRESHOLD":
+            print(f"✅ Threshold changed to default value {DEFAULT_THRESHOLD}")
+
+    def publish_action(self, action):
+        self.client.publish(ACTIONS_TOPIC, action)
 
 class Gyro:
-    def __init__(self, gyro_stream: MuseStream, ax):
+    def __init__(self, gyro_stream: MuseStream, mqtt_conn: MQTTConection, ax):
         self.gyro_stream = gyro_stream
         self.gyro_stream.setup_ax(ax)
         self.startef = False    
+        self.mqtt_conn = mqtt_conn
 
     def calibrate(self):
         print("Calibrating...")
@@ -55,6 +61,8 @@ class Gyro:
     def detect(self):
         global threshold
         self.started = True
+        last_down = 0
+        last_up = 0
         try:
             while self.started:
                 muse_stream = self.gyro_stream
@@ -75,20 +83,29 @@ class Gyro:
 
                     for ii in range(muse_stream.n_chan):
                         if muse_stream.type == "GYRO":
-                            print(
-                                f"{muse_stream.ch_names[ii]}:",
-                                plot_data[-1, ii],
-                                end=" ",
-                            )
-
+                            # print(
+                            #     f"{muse_stream.ch_names[ii]}:",
+                            #     plot_data[-1, ii],
+                            #     end=" ",
+                            # )
                             if ii == 2:
-                                print("")
+                                # print("")
                                 # * Select channel Y (1)
-                                if plot_data[-1, 1] > threshold:
-                                    print("\nPositivo")
+                                if (
+                                    plot_data[-1, 1] > threshold
+                                    and time() - last_up > 1
+                                ):
+                                    self.mqtt_conn.publish_action(TOGGLE_CELESTINO)
+                                    print("☁️  Toggled celestino pedal")
+                                    last_down = time()
                                     sleep(0.3)
-                                elif plot_data[-1, 1] < -threshold:
-                                    print("\nNegativo")
+                                elif (
+                                    plot_data[-1, 1] < -threshold
+                                    and time() - last_down > 1
+                                ):
+                                    self.mqtt_conn.publish_action(TOGGLE_SOSTENUTO)
+                                    last_up = time()
+                                    print("〰️ Toggled sostenuto pedal")
                                     sleep(0.3)
 
                         # muse_stream.lines[ii].set_xdata(
@@ -115,7 +132,7 @@ class Gyro:
 def main():
     # * Setup MQTT connection
     mqtt_conection = MQTTConection(
-        "adaptative-pedal/settings", "test.mosquitto.org", 1883, 60
+        SETTINGS_TOPIC, "test.mosquitto.org", 1883, 60
     )
     mqtt_conection.start()
     # * Then search for the data that is being streamed
@@ -138,7 +155,7 @@ def main():
     figure = "15x6"
     figsize = np.int16(figure.split('x'))
     fig, axes = plt.subplots(1, figsize=figsize)
-    gyro = Gyro(gyro_stream, axes)
+    gyro = Gyro(gyro_stream, mqtt_conection, axes)
     gyro.calibrate()
     gyro.detect()
     # lsl_viewer = LSLViewer(gyro_stream, fig, axes, gyro.mean)
