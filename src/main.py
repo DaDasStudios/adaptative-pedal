@@ -9,6 +9,7 @@ import paho.mqtt.client as mqtt
 import json
 
 threshold = DEFAULT_THRESHOLD
+calibrate = False
 
 class MQTTConection:
     def __init__(self, adj_topic, host, port, keepalive):
@@ -28,6 +29,7 @@ class MQTTConection:
         self.client.subscribe(self.adj_topic)
 
     def on_message(self, client, userdata, msg):
+        global calibrate
         global threshold
         payload = json.loads(msg.payload.decode())
 
@@ -36,6 +38,9 @@ class MQTTConection:
             threshold = int(payload["value"])
         elif msg.topic == self.adj_topic and payload["action"] == "DEFAULT_THRESHOLD":
             print(f"✅ Threshold changed to default value {DEFAULT_THRESHOLD}")
+        elif msg.topic == self.adj_topic and payload["action"] == "CALIBRATE":
+            print(f"⚙️  Calibrating")
+            calibrate = True
 
     def publish_action(self, action):
         self.client.publish(ACTIONS_TOPIC, action)
@@ -60,11 +65,17 @@ class Gyro:
 
     def detect(self):
         global threshold
+        global calibrate
         self.started = True
         last_down = 0
         last_up = 0
         try:
             while self.started:
+                if calibrate:
+                    sleep(1)
+                    self.calibrate()
+                    calibrate = False
+                    
                 muse_stream = self.gyro_stream
                 samples, timestamps = self.gyro_stream.inlet.pull_chunk(
                     timeout=0.1, max_samples=LSL_EEG_CHUNK

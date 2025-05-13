@@ -7,14 +7,38 @@
             "type": "board-esp32-devkit-c-v4",
             "id": "esp",
             "top": 0,
-            "left": 0,
+            "left": 158.44,
+            "attrs": {}
+        },
+        {
+            "type": "wokwi-servo",
+            "id": "servo1",
+            "top": 74,
+            "left": -45.2,
+            "rotate": 180,
+            "attrs": {}
+        },
+        {
+            "type": "wokwi-servo",
+            "id": "servo2",
+            "top": -31.6,
+            "left": -45.2,
+            "rotate": 180,
+            "attrs": {}
+        },
+        {
+            "type": "wokwi-servo",
+            "id": "servo3",
+            "top": -137.2,
+            "left": -45.2,
+            "rotate": 180,
             "attrs": {}
         },
         {
             "type": "wokwi-led",
             "id": "led1",
-            "top": 73.2,
-            "left": -44.2,
+            "top": 188.4,
+            "left": 61.4,
             "attrs": {
                 "color": "red"
             }
@@ -22,10 +46,19 @@
         {
             "type": "wokwi-led",
             "id": "led2",
-            "top": 130.8,
-            "left": -73,
+            "top": 54,
+            "left": 90.2,
             "attrs": {
-                "color": "orange"
+                "color": "red"
+            }
+        },
+        {
+            "type": "wokwi-led",
+            "id": "led4",
+            "top": -51.6,
+            "left": 90.2,
+            "attrs": {
+                "color": "red"
             }
         }
     ],
@@ -43,25 +76,106 @@
             []
         ],
         [
-            "esp:26",
-            "led1:A",
+            "esp:27",
+            "servo1:PWM",
             "green",
             [
                 "h0"
             ]
         ],
         [
-            "esp:27",
-            "led2:A",
+            "servo1:V+",
+            "esp:5V",
             "green",
             [
-                "h-14.21",
-                "v48"
+                "h19.2",
+                "v67.1"
+            ]
+        ],
+        [
+            "esp:GND.1",
+            "servo1:GND",
+            "black",
+            [
+                "h0"
+            ]
+        ],
+        [
+            "esp:26",
+            "servo2:PWM",
+            "green",
+            [
+                "h-28.65",
+                "v-96"
+            ]
+        ],
+        [
+            "servo2:V+",
+            "servo1:V+",
+            "green",
+            [
+                "h19.2",
+                "v105.5"
+            ]
+        ],
+        [
+            "servo2:GND",
+            "servo1:GND",
+            "black",
+            [
+                "h9.6",
+                "v105.6"
+            ]
+        ],
+        [
+            "servo3:PWM",
+            "esp:25",
+            "green",
+            [
+                "h28.8",
+                "v191.8"
+            ]
+        ],
+        [
+            "servo3:V+",
+            "servo2:V+",
+            "green",
+            [
+                "h19.2",
+                "v105.5"
+            ]
+        ],
+        [
+            "servo3:GND",
+            "servo2:GND",
+            "black",
+            [
+                "h19.2",
+                "v105.6"
+            ]
+        ],
+        [
+            "led1:A",
+            "esp:27",
+            "green",
+            [
+                "v9.6",
+                "h67.2",
+                "v-115.2"
             ]
         ],
         [
             "led1:C",
-            "esp:GND.1",
+            "servo1:GND",
+            "green",
+            [
+                "v19.2",
+                "h67.6"
+            ]
+        ],
+        [
+            "led2:A",
+            "esp:26",
             "green",
             [
                 "v0"
@@ -69,7 +183,25 @@
         ],
         [
             "led2:C",
-            "esp:CMD",
+            "servo1:GND",
+            "green",
+            [
+                "v0"
+            ]
+        ],
+        [
+            "led4:A",
+            "esp:25",
+            "green",
+            [
+                "v57.6",
+                "h9.6",
+                "v57.6"
+            ]
+        ],
+        [
+            "led4:C",
+            "servo2:GND",
             "green",
             [
                 "v0"
